@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtualized Table</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    
+    <div class="container" id="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Row</th>
+                    <th>Option 1</th>
+                    <th>Option 2</th>
+                    <th>Option 3</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- JavaScript should insert rows here -->
+            </tbody>
+        </table>
+        
+        <div id="virtual-list">
+            <!-- Virtual spacer to create illusion of all rows -->
+            <div id="spacer"></div>
+            <table>
+                <tbody id="table-body">
+                    <!-- Visible rows will be rendered here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+ <br>
+<button id="reset-button">Reset Selections</button>
