@@ -1,128 +1,72 @@
-window.onload = function() {
-    "use strict";
-    
-    // Configuration constants
+window.onload = function() { //ensure that page elements are loaded
+    "use strict"; //"enters strict mode"
+
     var TOTAL_ROWS = 10001,    
-        ROW_HEIGHT = 40,        // Height of each row in pixels
-        VISIBLE_ROWS = 20,      // Number of rows visible in viewport
-        BUFFER = 5,             // Extra rows rendered above/below viewport
-        SCROLL_SPEED = 2;       // Pixels per frame for smooth scrolling
+        ROW_HEIGHT = 40,      
+        VISIBLE_ROWS = 20,     
+        BUFFER = 5; // Extra rows rendered above/below viewport
     
-    // DOM elements and state
+    //    //Getting DOM elements from HTML
     var container = document.getElementById("table-container"),
         tableBody = document.getElementById("table-body"),
         spacer = document.getElementById("spacer"),
         resetButton = document.getElementById("reset-button"),
-        isIE = !!window.document.documentMode,
-        state = JSON.parse(localStorage.getItem("radioState")) || {},
-        scrollInterval = null;
 
-    // Exit if required elements are not found
-    if (!container || !tableBody || !spacer) return;
+        state = JSON.parse(localStorage.getItem("radioState")) || {},// Load saved state or use empty object
+        scrollInterval = null;//initialization
+
+    if (!container || !tableBody || !spacer) return;// Exit if required elements are not found
+
+    spacer.style.height = (TOTAL_ROWS * ROW_HEIGHT) + "px";// Initialize virtual scroll space
     
-    // Initialize virtual scroll space
-    spacer.style.height = (TOTAL_ROWS * ROW_HEIGHT) + "px";
-    
-    /**
-     * Creates a table row with radio buttons
-     * @param {number} index - Row index (1-based)
-     * @returns {HTMLElement} Table row element
-     */
-    function createRow(index) {
-        var row = document.createElement("tr");
-        var selected = state[index] || "1";
+    function createRow(index) { 
+        var row = document.createElement("tr"); // Create a new table row  <tr> element
+        var selected = state[index] || "1"; //retrieves previous state or sets to 1
+        row.style.position = "absolute";// Set absolute positioning for proper row placement
+        row.style.top = (index * ROW_HEIGHT) + "px";// Position row vertically based on its index
         
-        row.style.position = "absolute";
-        row.style.top = (index * ROW_HEIGHT) + "px";
-        row.style.width = "100%";
-        
-        row.innerHTML = 
+        row.innerHTML = // Build row with label and three radio buttons (selected marked)
             "<td>Row " + index + "</td>" +
             "<td><input type='radio' name='row" + index + "' value='1'" + (selected === "1" ? " checked" : "") + "></td>" +
             "<td><input type='radio' name='row" + index + "' value='2'" + (selected === "2" ? " checked" : "") + "></td>" +
             "<td><input type='radio' name='row" + index + "' value='3'" + (selected === "3" ? " checked" : "") + "></td>";
-            
         return row;
     }
     
-    /**
-     * Renders visible rows based on scroll position
-     * Uses document fragment for performance
-     */
     function renderRows() {
-        var scrollTop = container.scrollTop;
-        var startIndex = Math.max(1, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);
-        var endIndex = Math.min(TOTAL_ROWS, startIndex + VISIBLE_ROWS + BUFFER);
+        var scrollTop = container.scrollTop; //how far the container has been scrolled
+        var startIndex = Math.max(1, Math.floor(scrollTop / ROW_HEIGHT) - BUFFER);// Calculate start index
+        var endIndex = Math.min(TOTAL_ROWS, startIndex + VISIBLE_ROWS + BUFFER);// Calculate end index
         
-        // Efficiently clear and rebuild rows
-        while (tableBody.firstChild) tableBody.removeChild(tableBody.firstChild);
-        
-        var fragment = document.createDocumentFragment();
+        while (tableBody.firstChild) tableBody.removeChild(tableBody.firstChild);//clear and rebuild rows
+        var fragment = document.createDocumentFragment();// Create a temporary container for new rows
         for (var i = startIndex; i < endIndex; i++) {
-            fragment.appendChild(createRow(i));
+            fragment.appendChild(createRow(i));// Add each row to the container
         }
         tableBody.appendChild(fragment);
     }
 
-    /**
-     * Initiates smooth scrolling in specified direction
-     * @param {string} direction - 'up' or 'down'
-     */
-    function startContinuousScroll(direction) {
+    function startContinuousScroll(direction) { //smooth scrolling
         if (scrollInterval) return;
-        
-        var lastTime = performance.now();
         
         function scroll() {
             if (!scrollInterval) return;
+
+            var currentScroll = container.scrollTop;// Get the current scroll position
+            var maxScroll = (TOTAL_ROWS * ROW_HEIGHT) - container.clientHeight;//maximum scrollable distanc
             
-            var deltaTime = performance.now() - lastTime;
-            lastTime = performance.now();
-            
-            var currentScroll = container.scrollTop;
-            var maxScroll = (TOTAL_ROWS * ROW_HEIGHT) - container.clientHeight;
-            
-            if (direction === 'up') {
-                currentScroll = Math.max(0, currentScroll - SCROLL_SPEED * deltaTime / 16);
-                if (currentScroll <= 0) {
-                    container.scrollTop = 0;
-                    stopContinuousScroll();
-                    return;
-                }
-            } else {
-                currentScroll = Math.min(maxScroll, currentScroll + SCROLL_SPEED * deltaTime / 16);
-                if (currentScroll >= maxScroll) {
-                    container.scrollTop = maxScroll;
-                    stopContinuousScroll();
-                    return;
-                }
-            }
-            
-            container.scrollTop = currentScroll;
-            scrollInterval = requestAnimationFrame(scroll);
+            container.scrollTop = currentScroll;// Update the container's scroll position to the new value
+            scrollInterval = requestAnimationFrame(scroll);// Schedule the next frame to continue smooth scrolling
         }
         
         scrollInterval = requestAnimationFrame(scroll);
     }
+    container.onmousedown = function(e) {// When the mouse is pressed on the container, run this function using event details 'e'
+        var rect = container.getBoundingClientRect(); // Get container's position and size
+        var scrollbarWidth = container.offsetWidth - container.clientWidth;// Calculate scrollbar width
+        
+        if (e.clientX <= rect.right - scrollbarWidth) return;        // Ignore clicks not on scrollbar
 
-    /**
-     * Stops continuous scrolling animation
-     */
-    function stopContinuousScroll() {
-        if (scrollInterval) {
-            cancelAnimationFrame(scrollInterval);
-            scrollInterval = null;
-        }
-    }
-    
-    // Handle scrollbar interactions
-    container.onmousedown = function(e) {
-        var rect = container.getBoundingClientRect();
-        var scrollbarWidth = container.offsetWidth - container.clientWidth;
-        
-        // Ignore clicks not on scrollbar
-        if (e.clientX <= rect.right - scrollbarWidth) return;
-        
         var arrowHeight = 17; // Standard scrollbar arrow height
         
         // Handle scroll arrow clicks
@@ -164,10 +108,5 @@ window.onload = function() {
     container.onscroll = function() {
         requestAnimationFrame(renderRows);
     };
-
-    // Clean up scroll animation
-    document.addEventListener("mouseup", stopContinuousScroll);
-    container.addEventListener("mouseleave", stopContinuousScroll);
-    
-    renderRows();
+    renderRows(); // Render the initial set of visible rows (plus buffer) on page load
 };
